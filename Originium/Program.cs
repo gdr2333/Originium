@@ -67,22 +67,18 @@ try
 
         try
         {
+            var pending = sqlsvr!.Database.GetPendingMigrations().ToList();
             if (args.Contains("--cleardb"))
             {
                 dbLogger.LogWarning("收到 --cleardb 参数，正在删除数据库...");
-                sqlsvr!.Database.EnsureDeleted();
-                dbLogger.LogInformation("数据库删除完成");
+                sqlsvr.Database.EnsureDeleted();
+                pending.Clear();
+                dbLogger.LogInformation("数据库删除完成，将由迁移机制重建");
             }
 
-            var isnew = sqlsvr!.Database.EnsureCreated();
-            if (isnew)
-            {
-                dbLogger.LogInformation("数据库已创建或已存在");
-            }
-            else
-            {
-                dbLogger.LogDebug("数据库已存在，无需创建");
-            }
+            await sqlsvr.Database.MigrateAsync();
+            dbLogger.LogInformation("数据库迁移已应用，共 {Count} 个迁移: {Migrations}",
+                pending.Count + 1, string.Join(", ", pending));
 
             if (args.Contains("--regen-embeddings"))
             {
@@ -93,7 +89,7 @@ try
                 var memories = await sqlsvr.Memories.ToListAsync();
                 egmLogger.LogInformation("需要重新生成嵌入向量的记忆数量: {Count}", memories.Count);
 
-                sqlsvr.Database.ExecuteSql($"ALTER TABLE MemoryItem ALTER COLUMN Embedding vector({config.OpenAIEmbeddingDimension}) NULL");
+                sqlsvr.Database.ExecuteSql($"ALTER TABLE Memories ALTER COLUMN Embedding vector({config.OpenAIEmbeddingDimension}) NULL");
 
                 List<Task> tsks = [];
                 var processed = 0;

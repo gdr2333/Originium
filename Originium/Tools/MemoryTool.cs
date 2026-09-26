@@ -62,6 +62,35 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
     }
 
     [McpServerTool]
+    [Description("按关键词从长期记忆中检索内容（SQL Server 全文检索路径，无需生成向量）。适合用具体词语、短语快速查找相关记忆；返回命中的若干条结果。")]
+    public async Task<SearchResult[]> SearchKeywords(
+        [Description("查询关键词，可包含多个词语")] string keywords,
+        [Description("返回结果数量上限，默认 10")] int limit = 10
+        )
+    {
+        try
+        {
+            logger.LogDebug("开始关键词搜索记忆: {Keywords}, 上限: {Limit}", keywords, limit);
+            if (limit is < 1 or > 100) limit = 10;
+
+            var results = await db.Memories
+                .Where(m => EF.Functions.FreeText(m.Content, keywords))
+                .OrderByDescending(m => m.Id)
+                .Take(limit)
+                .Select(m => new SearchResult(m.Id, m.Content))
+                .ToArrayAsync();
+
+            logger.LogInformation("关键词搜索完成: 关键词={Keywords}, 结果数量={Count}", keywords, results.Length);
+            return results;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "关键词搜索时发生错误");
+            throw;
+        }
+    }
+
+    [McpServerTool]
     [Description("按 ID 删除一条长期记忆。仅当用户明确要求遗忘或纠正某条过时/错误记忆时调用。")]
     public async Task DeleteMemory(
         [Description("要删除的记忆的id")] ulong id
