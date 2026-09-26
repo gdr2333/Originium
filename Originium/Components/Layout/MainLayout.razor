@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+
+<div class="layout">
+    <header class="topbar">
+        <span class="brand">Originium 管理面板</span>
+        <AuthorizeView>
+            <Authorized>
+                <span class="user">@context.User.Identity?.Name</span>
+                <form method="post" action="/admin/logout">
+                    <AntiforgeryToken />
+                    <button type="submit" class="link">退出登录</button>
+                </form>
+            </Authorized>
+        </AuthorizeView>
+    </header>
+    <main class="content">
+        @Body
+    </main>
+</div>

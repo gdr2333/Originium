@@ -74,7 +74,7 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
             if (limit is < 1 or > 100) limit = 10;
 
             var results = await db.Memories
-                .Where(m => EF.Functions.FreeText(m.Content, keywords))
+                .Where(m => EF.Functions.Contains(m.Content, keywords))
                 .OrderByDescending(m => m.Id)
                 .Take(limit)
                 .Select(m => new SearchResult(m.Id, m.Content))

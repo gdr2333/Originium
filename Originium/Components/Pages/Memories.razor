@@ -1,0 +1,168 @@
+@page "/"
+@page "/memories"
+@attribute [Authorize]
+@using Microsoft.Data.SqlTypes
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<MemoryDb> DbFactory
+@inject EmbeddingsGeneratorManager Embeddings
+@inject ILogger<Memories> Logger
+
+<PageTitle>记忆管理 - Originium</PageTitle>
+
+<h1>记忆管理</h1>
+
+<div class="toolbar">
+    <input class="search-input" placeholder="输入关键词或查询内容..." @bind="Query" @bind:event="oninput" @onkeydown="OnKeyDown" />
+    <button @onclick="() => RunSearch(SearchMode.Semantic)" disabled="@IsBusy">语义搜索</button>
+    <button @onclick="() => RunSearch(SearchMode.Keyword)" disabled="@IsBusy">关键词搜索</button>
+    <button @onclick="Reload" disabled="@IsBusy">刷新</button>
+    <span class="status">共 @TotalCount 条记忆</span>
+</div>
+
+@if (IsBusy)
+{
+    <p class="status">处理中...</p>
+}
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <p class="error">@Error</p>
+}
+
+@if (Results.Count == 0 && !IsBusy)
+{
+    <p class="empty">暂无记忆。</p>
+}
+else
+{
+    <table class="memories">
+        <thead>
+            <tr>
+                <th style="width: 90px;">ID</th>
+                <th>内容</th>
+                <th style="width: 110px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Results)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td class="content">@item.Content</td>
+                    <td>
+                        <button class="danger" @onclick="() => Delete(item.Id)" disabled="@IsBusy">删除</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private enum SearchMode { Recent, Semantic, Keyword }
+
+    private string Query { get; set; } = string.Empty;
+    private List<MemoryItem> Results { get; set; } = [];
+    private int TotalCount { get; set; }
+    private bool IsBusy { get; set; }
+    private string? Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Reload();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await RunSearch(SearchMode.Semantic);
+        }
+    }
+
+    private async Task Reload()
+    {
+        await Load(SearchMode.Recent);
+    }
+
+    private async Task RunSearch(SearchMode mode)
+    {
+        if (string.IsNullOrWhiteSpace(Query))
+        {
+            await Reload();
+            return;
+        }
+
+        await Load(mode);
+    }
+
+    private async Task Load(SearchMode mode)
+    {
+        IsBusy = true;
+        Error = null;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            TotalCount = await db.Memories.CountAsync();
+
+            switch (mode)
+            {
+                case SearchMode.Semantic:
+                    var vec = new SqlVector<float>(await Embeddings.GetEmbedding(Query));
+                    Results = await db.Memories
+                        .OrderBy(m => EF.Functions.VectorDistance("cosine", m.Embedding, vec))
+                        .Take(100)
+                        .ToListAsync();
+                    break;
+                case SearchMode.Keyword:
+                    Results = await db.Memories
+                        .Where(m => EF.Functions.Contains(m.Content, Query))
+                        .OrderByDescending(m => m.Id)
+                        .Take(100)
+                        .ToListAsync();
+                    break;
+                default:
+                    Results = await db.Memories
+                        .OrderByDescending(m => m.Id)
+                        .Take(100)
+                        .ToListAsync();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "管理面板加载记忆失败");
+            Error = $"加载失败: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task Delete(uint id)
+    {
+        IsBusy = true;
+        Error = null;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var item = await db.Memories.FindAsync(id);
+            if (item is not null)
+            {
+                db.Memories.Remove(item);
+                await db.SaveChangesAsync();
+            }
+            await Load(SearchMode.Recent);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "管理面板删除记忆失败，ID: {Id}", id);
+            Error = $"删除失败: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}
