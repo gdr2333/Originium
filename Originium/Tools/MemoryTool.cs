@@ -73,8 +73,9 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
             logger.LogDebug("开始关键词搜索记忆: {Keywords}, 上限: {Limit}", keywords, limit);
             if (limit is < 1 or > 100) limit = 10;
 
+            var condition = FullTextQuery.BuildContainsExpression(keywords);
             var results = await db.Memories
-                .Where(m => EF.Functions.Contains(m.Content, keywords))
+                .Where(m => EF.Functions.Contains(m.Content, condition))
                 .OrderByDescending(m => m.Id)
                 .Take(limit)
                 .Select(m => new SearchResult(m.Id, m.Content))

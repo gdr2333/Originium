@@ -115,8 +115,9 @@ else
                         .ToListAsync();
                     break;
                 case SearchMode.Keyword:
+                    var condition = FullTextQuery.BuildContainsExpression(Query);
                     Results = await db.Memories
-                        .Where(m => EF.Functions.Contains(m.Content, Query))
+                        .Where(m => EF.Functions.Contains(m.Content, condition))
                         .OrderByDescending(m => m.Id)
                         .Take(100)
                         .ToListAsync();
