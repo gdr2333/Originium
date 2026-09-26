@@ -1,0 +1,16 @@
+# === 工具配置·勿上传 (-- aknyzsd) ===
+CLAUDE.md
+.claude/
+.note/
+docs/
+.claude/settings.local.json
+.cursor/
+.vscode/
+.idea/
+.aider*
+.env
+.env.*
+!.env.example
+
+# Visual Studio 临时缓存（根目录级，补子目录 .gitignore 的漏网）
+.vs/

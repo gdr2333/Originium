@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Protocol;
 using Originium.Datas;
 using Originium.Services;
 using Originium.Tools;
@@ -21,12 +22,23 @@ builder.Services.AddLogging();
 builder.Services.AddSqlServer<MemoryDb>(config.MemoryDb);
 
 builder.Services
-    .AddMcpServer()
+    .AddMcpServer(options =>
+    {
+        options.ServerInfo = new Implementation
+        {
+            Name = "Originium",
+            Version = "1.0.0",
+            Title = "Originium Memory Service",
+            Description = "基于 MCP 的 AI 长期记忆服务"
+        };
+    })
     .WithHttpTransport(options =>
     {
         options.Stateless = true;
     })
-    .WithTools<MemoryTool>();
+    .WithTools<MemoryTool>()
+    .WithPrompts<MemoryPromptType>()
+    .WithResources<MemoryResourceType>();
 
 var app = builder.Build();
 
