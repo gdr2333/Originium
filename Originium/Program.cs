@@ -67,6 +67,13 @@ try
 
         try
         {
+            if (config.OpenAIEmbeddingDimension is < 1 or > 1998)
+            {
+                dbLogger.LogError("OpenAIEmbeddingDimension {Dimension} 超出 SQL Server vector 支持范围 (1-1998)",
+                    config.OpenAIEmbeddingDimension);
+                throw new InvalidOperationException("OpenAIEmbeddingDimension 配置非法");
+            }
+
             var pending = sqlsvr!.Database.GetPendingMigrations().ToList();
             if (args.Contains("--cleardb"))
             {
@@ -79,6 +86,20 @@ try
             await sqlsvr.Database.MigrateAsync();
             dbLogger.LogInformation("数据库迁移已应用，共 {Count} 个迁移: {Migrations}",
                 pending.Count + 1, string.Join(", ", pending));
+
+            var actualDim = await sqlsvr.Database.SqlQuery<int>($"""
+                SELECT (CAST(MAX(max_length) AS int) - 8) / 4 AS [Value]
+                FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'dbo.Memories') AND name = N'Embedding'
+                """).FirstOrDefaultAsync();
+            if (actualDim != config.OpenAIEmbeddingDimension)
+            {
+                dbLogger.LogError(
+                    "嵌入向量维度不一致: 数据库列为 vector({Actual}), 配置为 {Config}。请将 Config.json 的 OpenAIEmbeddingDimension 调整为 {Actual}，或改回原维度后生成并应用新迁移 (dotnet ef migrations add)，必要时用 --cleardb 重建",
+                    actualDim, config.OpenAIEmbeddingDimension, actualDim);
+                throw new InvalidOperationException("Embedding 列维度与配置不一致，服务拒绝启动");
+            }
+            dbLogger.LogDebug("嵌入向量维度校验通过: {Dimension}", actualDim);
 
             if (args.Contains("--regen-embeddings"))
             {
