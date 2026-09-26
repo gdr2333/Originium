@@ -67,6 +67,7 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+app.MapStaticAssets();
 
 app.MapPost("/admin/login", async (HttpContext http, AdminAuthenticator auth, IAntiforgery antiforgery) =>
 {
