@@ -28,7 +28,7 @@
 |------|------|
 | C# | .NET 10.0 |
 | 框架 | ASP.NET Core |
-| ORM | Entity Framework Core 10.0.12 |
+| ORM | Entity Framework Core 10 |
 | 数据库 | SQL Server |
 | 协议 | Model Context Protocol (MCP) 2.2.0 |
 | 嵌入模型 | BGE-M3 (OpenAI 兼容 API) |
@@ -80,8 +80,8 @@ dotnet run
 # 清除数据库后运行
 dotnet run -- --cleardb
 
-# 清除数据库并重新生成嵌入
-dotnet run -- --cleardb --regen-embeddings
+# 重新生成嵌入
+dotnet run -- --regen-embeddings
 ```
 
 > **参数说明**
@@ -113,7 +113,8 @@ dotnet run -- --cleardb --regen-embeddings
 ```
 
 > 默认指向华为 ModelArts MaaS 的 BGE-M3 端点，可替换为任意 OpenAI 兼容的嵌入 API（如本地 Ollama、vLLM 等），只需保证返回格式与维度一致。
-
+> 因为SQL Server的限制，向量维度最大为1998维
+> OpenAIEmbeddingIsFixedDimension用于指定模型是否为固定维数，为否时将会发送指定维度的参数。
 ## 启动地址
 
 - HTTP: `http://localhost:6122`
