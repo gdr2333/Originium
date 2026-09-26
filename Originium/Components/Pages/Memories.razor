@@ -116,7 +116,7 @@ else
                     break;
                 case SearchMode.Keyword:
                     Results = await db.Memories
-                        .Where(m => EF.Functions.FreeText(m.Content, Query))
+                        .Where(m => EF.Functions.Contains(m.Content, Query))
                         .OrderByDescending(m => m.Id)
                         .Take(100)
                         .ToListAsync();
