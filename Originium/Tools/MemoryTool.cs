@@ -11,7 +11,7 @@ namespace Originium.Tools;
 public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<MemoryTool> logger)
 {
     [McpServerTool]
-    [Description("向记忆数据库写入一条记忆")]
+    [Description("将一条信息写入长期记忆。当用户陈述重要事实、个人偏好、决策结论、任务背景或任何值得跨会话保留的信息时调用此工具，避免后续重复询问。")]
     public async Task WriteMemory(
         [Description("记忆内容")] string content
         )
@@ -34,7 +34,7 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
     }
 
     [McpServerTool]
-    [Description("从记忆中查询")]
+    [Description("从长期记忆中按语义相似度检索相关内容。在回答用户问题前调用，查找是否有可复用的历史记忆；返回最相关的若干条结果。")]
     public async Task<SearchResult[]> SearchMemory(
         [Description("要查询的内容")] string content
         )
@@ -62,7 +62,7 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
     }
 
     [McpServerTool]
-    [Description("删除指定记忆")]
+    [Description("按 ID 删除一条长期记忆。仅当用户明确要求遗忘或纠正某条过时/错误记忆时调用。")]
     public async Task DeleteMemory(
         [Description("要删除的记忆的id")] ulong id
         )
