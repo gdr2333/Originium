@@ -47,6 +47,12 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
                 return new WriteMemoriesResult(0);
             }
 
+            if (contents.Length > 100)
+            {
+                logger.LogWarning("批量写入记忆条数 {Count} 超过上限 100，已拒绝", contents.Length);
+                throw new ArgumentException("批量写入记忆条数超过上限 100，请拆分为多次 WriteMemories 调用，每次不超过 100 条。");
+            }
+
             logger.LogDebug("开始批量写入记忆，条数: {Count}", contents.Length);
 
             var embeddingTasks = new Task<float[]>[contents.Length];
