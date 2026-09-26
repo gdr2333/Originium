@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -67,8 +68,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
-app.MapPost("/admin/login", async (HttpContext http, AdminAuthenticator auth) =>
+app.MapPost("/admin/login", async (HttpContext http, AdminAuthenticator auth, IAntiforgery antiforgery) =>
 {
+    if (!await IsAntiforgeryValid(http, antiforgery))
+    {
+        return Results.BadRequest();
+    }
+
     var form = await http.Request.ReadFormAsync();
     var password = form["password"].ToString();
     var returnUrl = form["returnUrl"].ToString();
@@ -85,17 +91,41 @@ app.MapPost("/admin/login", async (HttpContext http, AdminAuthenticator auth) =>
         CookieAuthenticationDefaults.AuthenticationScheme,
         new ClaimsPrincipal(identity));
 
-    return Results.Redirect(string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/') ? "/memories" : returnUrl);
+    return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/memories");
 });
 
-app.MapPost("/admin/logout", async (HttpContext http) =>
+app.MapPost("/admin/logout", async (HttpContext http, IAntiforgery antiforgery) =>
 {
+    if (!await IsAntiforgeryValid(http, antiforgery))
+    {
+        return Results.BadRequest();
+    }
+
     await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     return Results.Redirect("/login");
 });
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+static bool IsLocalUrl(string? url)
+    => !string.IsNullOrWhiteSpace(url)
+        && url.StartsWith('/')
+        && !url.StartsWith("//")
+        && !url.StartsWith("/\\");
+
+static async Task<bool> IsAntiforgeryValid(HttpContext http, IAntiforgery antiforgery)
+{
+    try
+    {
+        await antiforgery.ValidateRequestAsync(http);
+        return true;
+    }
+    catch (AntiforgeryValidationException)
+    {
+        return false;
+    }
+}
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
