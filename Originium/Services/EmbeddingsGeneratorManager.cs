@@ -34,18 +34,12 @@ public class EmbeddingsGeneratorManager : IDisposable
             var result = await concurrentManager.EnqueueAsync(async () =>
             {
                 logger.LogDebug("嵌入请求排队完成，开始发送 HTTP 请求");
-                HttpResponseMessage resp;
-                if (config.OpenAIEmbeddingIsFixedDimension)
-                {
-                    resp = await client.PostAsJsonAsync("",
-                        new { model = config.OpenAIEmbeddingModel, input = text, encoding_format = "float" });
-                }
-                else
-                {
-                    resp = await client.PostAsJsonAsync("",
+                using HttpResponseMessage resp = config.OpenAIEmbeddingIsFixedDimension
+                    ? await client.PostAsJsonAsync("",
+                        new { model = config.OpenAIEmbeddingModel, input = text, encoding_format = "float" })
+                    : await client.PostAsJsonAsync("",
                         new { model = config.OpenAIEmbeddingModel, input = text,
                             dimensions = config.OpenAIEmbeddingDimension, encoding_format = "float" });
-                }
 
                 if (!resp.IsSuccessStatusCode)
                 {

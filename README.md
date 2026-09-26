@@ -16,10 +16,12 @@
 - [ ] 记忆分桶 / 分区（按会话隔离）
 - [ ] 嵌入向量维度可配置迁移策略
 - [x] WebUI 管理面板（记忆浏览/搜索/删除可视化，Blazor Server）
+- [x] 新增 WriteMemories 批量写入 + 强化语义切分契约（禁止按字节切分消息段）
 
 ## 功能特性
 
 - **写入记忆** — 将文本内容存储到 SQL Server 数据库，并自动生成向量嵌入
+- **批量写入** — 一次性提交多条语义完整的记忆，强制按语义单元切分而非按字节切分
 - **语义搜索** — 通过向量相似度（余弦距离）检索相关记忆
 - **关键词搜索** — 通过 SQL Server 全文检索按关键词快速查找，无需生成向量
 - **删除记忆** — 按 ID 删除指定记忆
@@ -124,7 +126,8 @@ dotnet ef migrations add <迁移名称> --project Originium
 
 | 工具 | 说明 |
 |------|------|
-| `WriteMemory(content)` | 写入一条记忆 |
+| `WriteMemory(content)` | 写入一条记忆（单条语义完整单元，禁止按字节切分） |
+| `WriteMemories(contents)` | 批量写入多条语义完整的记忆，返回 `WriteMemoriesResult` |
 | `SearchMemory(content)` | 按语义相似度搜索相关记忆，返回 `SearchResult[]` |
 | `SearchKeywords(keywords, limit = 10)` | 按关键词全文检索记忆，返回 `SearchResult[]` |
 | `DeleteMemory(id)` | 按 ID 删除记忆 |
@@ -192,7 +195,7 @@ MCP 客户端 (AI 助手)
     │ MCP 协议 (HTTP)
     ▼
 Originium (MCP 服务器)
-├── MemoryTool — WriteMemory / SearchMemory / SearchKeywords / DeleteMemory
+├── MemoryTool — WriteMemory / WriteMemories / SearchMemory / SearchKeywords / DeleteMemory
 ├── MemoryPromptType — auto_remember / recall_first
 ├── MemoryResourceType — memory://recent / memory://item/{id}
 ├── EmbeddingsGeneratorManager — 调用嵌入 API 生成向量
