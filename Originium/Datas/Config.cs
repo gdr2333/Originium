@@ -9,4 +9,5 @@ public class Config
     public int OpenAIEmbeddingDimension { get; init; }
     public int OpenAIEmbeddingConcurrent { get; init; }
     public bool OpenAIEmbeddingIsFixedDimension { get; init; }
+    public string? AdminPassword { get; init; }
 }

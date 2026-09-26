@@ -1,0 +1,38 @@
+@page "/login"
+@layout EmptyLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AdminAuthenticator Auth
+@inject NavigationManager Navigation
+
+<PageTitle>登录 - Originium</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <RedirectToMemories />
+    </Authorized>
+    <NotAuthorized>
+        <div class="login-card">
+            <h1>Originium 管理面板</h1>
+
+            @if (!Auth.IsEnabled)
+            {
+                <p class="error">未配置 AdminPassword，管理面板已禁用。请在 Config.json 中设置 AdminPassword 后重启服务。</p>
+            }
+            else
+            {
+                <form method="post" action="/admin/login">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                    <label for="password">访问密码</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" autofocus />
+                    <button type="submit">登录</button>
+                </form>
+            }
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
+}

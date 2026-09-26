@@ -15,7 +15,7 @@
 - [ ] 补齐单元测试项目
 - [ ] 记忆分桶 / 分区（按会话隔离）
 - [ ] 嵌入向量维度可配置迁移策略
-- [ ] WebUI 管理面板（记忆浏览/搜索/删除可视化）
+- [x] WebUI 管理面板（记忆浏览/搜索/删除可视化，Blazor Server）
 
 ## 功能特性
 
@@ -26,6 +26,7 @@
 - **MCP 原语** — 提供 Prompts（自动记忆 / 先回忆再回答）与 Resources（最近记忆 / 按 ID 读取）
 - **并发控制** — 限制嵌入 API 的并发请求数，控制成本
 - **维度校验** — 启动时校验数据库向量列维度与配置是否一致，避免静默错误
+- **管理面板** — 基于 Blazor Server 的 WebUI，可视化浏览 / 语义搜索 / 关键词搜索 / 删除记忆，单密码登录保护
 
 ## 技术栈
 
@@ -37,6 +38,7 @@
 | 数据库 | SQL Server（需启用全文检索功能） |
 | 协议 | Model Context Protocol (MCP) 2.2.0 |
 | 嵌入模型 | BGE-M3 (OpenAI 兼容 API) |
+| 管理面板 | Blazor Server（.NET 10） |
 
 ## 项目结构
 
@@ -57,6 +59,19 @@ Originium/
 │   ├── MemoryTool.cs                  # MCP 工具定义
 │   ├── MemoryPromptType.cs            # MCP Prompts 定义
 │   └── MemoryResourceType.cs          # MCP Resources 定义
+├── Components/                        # Blazor Server 管理面板
+│   ├── App.razor                      # 根组件（HTML 文档）
+│   ├── Routes.razor                   # 路由与授权视图
+│   ├── RedirectToLogin.razor          # 未授权跳转登录
+│   ├── RedirectToMemories.razor       # 已登录跳转记忆页
+│   ├── Layout/
+│   │   ├── MainLayout.razor           # 主布局（顶栏 / 退出登录）
+│   │   └── EmptyLayout.razor          # 登录页空布局
+│   └── Pages/
+│       ├── Login.razor                # 单密码登录页
+│       └── Memories.razor             # 记忆浏览 / 搜索 / 删除
+├── wwwroot/
+│   └── app.css                        # 管理面板样式
 └── Properties/
     └── launchSettings.json            # 启动配置
 ```
@@ -128,6 +143,19 @@ dotnet ef migrations add <迁移名称> --project Originium
 | `memory://recent` | 最近写入的记忆列表（最多 20 条） |
 | `memory://item/{id}` | 按 ID 读取一条记忆 |
 
+## 管理面板
+
+服务启动后，浏览器访问 `http://localhost:6122/`（或 `/memories`）即可打开 Blazor Server 管理面板：
+
+- **浏览** — 默认按 ID 倒序展示最近 100 条记忆
+- **语义搜索** — 输入查询内容，调用嵌入 API 按余弦距离检索
+- **关键词搜索** — 走 SQL Server 全文检索，无需生成向量
+- **删除** — 按 ID 删除单条记忆
+
+面板使用**单密码登录**（Cookie 认证）。密码在 `Config.json` 的 `AdminPassword` 中配置；未配置时面板自动禁用并提示。登录状态默认保持 7 天，可在页面右上角退出。
+
+> 管理面板与 MCP 端点共用同一端口，互不影响。生产环境请务必设置强密码，并通过 HTTPS 暴露服务。
+
 ## 配置
 
 `Config.json` 已被 `.gitignore` 忽略，请手动创建并编辑：
@@ -140,13 +168,15 @@ dotnet ef migrations add <迁移名称> --project Originium
   "OpenAIEmbeddingDimension": 1024,
   "OpenAIEmbeddingIsFixedDimension": true,
   "OpenAIEmbeddingConcurrent": 4,
-  "OpenAIApiKey": "your-api-key"
+  "OpenAIApiKey": "your-api-key",
+  "AdminPassword": "your-admin-password"
 }
 ```
 
 > 默认指向华为 ModelArts MaaS 的 BGE-M3 端点，可替换为任意 OpenAI 兼容的嵌入 API（如本地 Ollama、vLLM 等），只需保证返回格式与维度一致。
 > 因为 SQL Server 的限制，向量维度最大为 1998 维。
 > `OpenAIEmbeddingIsFixedDimension` 用于指定模型是否为固定维数，为 `false` 时将会发送指定维度的参数。
+> `AdminPassword` 为管理面板的单密码；留空则不启用管理面板。
 
 ## 启动地址
 
@@ -167,6 +197,13 @@ Originium (MCP 服务器)
 ├── MemoryResourceType — memory://recent / memory://item/{id}
 ├── EmbeddingsGeneratorManager — 调用嵌入 API 生成向量
 └── MemoryDb (EF Core) — SQL Server 持久化存储 + 全文检索
+
+浏览器 (管理员)
+    │ HTTP (Cookie 认证)
+    ▼
+Originium 管理面板 (Blazor Server)
+├── /login — 单密码登录
+└── /memories — 浏览 / 语义搜索 / 关键词搜索 / 删除
 ```
 
 ## 许可证

@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
+using Originium.Components;
 using Originium.Datas;
 using Originium.Services;
 using Originium.Tools;
+using System.Security.Claims;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,8 +23,24 @@ builder.Logging.SetMinimumLevel(LogLevel.Debug);
 var config = JsonSerializer.Deserialize<Config>(File.ReadAllText("Config.json"))!;
 builder.Services.AddSingleton(config);
 builder.Services.AddSingleton<EmbeddingsGeneratorManager>();
+builder.Services.AddSingleton<AdminAuthenticator>();
 builder.Services.AddLogging();
-builder.Services.AddSqlServer<MemoryDb>(config.MemoryDb);
+builder.Services.AddDbContextFactory<MemoryDb>(o => o.UseSqlServer(config.MemoryDb));
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "Originium.Admin";
+        options.LoginPath = "/login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
 builder.Services
     .AddMcpServer(options =>
@@ -41,6 +62,40 @@ builder.Services
     .WithResources<MemoryResourceType>();
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
+
+app.MapPost("/admin/login", async (HttpContext http, AdminAuthenticator auth) =>
+{
+    var form = await http.Request.ReadFormAsync();
+    var password = form["password"].ToString();
+    var returnUrl = form["returnUrl"].ToString();
+
+    if (!auth.Verify(password))
+    {
+        return Results.Redirect("/login?error=1");
+    }
+
+    var identity = new ClaimsIdentity(
+        [new Claim(ClaimTypes.Name, "admin")],
+        CookieAuthenticationDefaults.AuthenticationScheme);
+    await http.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(identity));
+
+    return Results.Redirect(string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/') ? "/memories" : returnUrl);
+});
+
+app.MapPost("/admin/logout", async (HttpContext http) =>
+{
+    await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login");
+});
+
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 

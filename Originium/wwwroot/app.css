@@ -1,0 +1,187 @@
+:root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #4f8cff;
+    --danger: #e5534b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px;
+}
+
+a {
+    color: var(--accent);
+}
+
+.layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.topbar .user {
+    margin-left: auto;
+    color: var(--muted);
+}
+
+.topbar form {
+    margin: 0;
+}
+
+.content {
+    padding: 20px;
+    flex: 1;
+}
+
+h1 {
+    font-size: 20px;
+    margin: 0 0 16px;
+}
+
+button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button.danger {
+    background: var(--danger);
+}
+
+button.link {
+    background: none;
+    color: var(--accent);
+    padding: 0;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 220px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.status {
+    color: var(--muted);
+}
+
+.error {
+    color: var(--danger);
+}
+
+.empty {
+    color: var(--muted);
+}
+
+table.memories {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table.memories th,
+table.memories td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+table.memories th {
+    background: #1d2129;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+table.memories tr:last-child td {
+    border-bottom: none;
+}
+
+table.memories td.content {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.login-card {
+    max-width: 360px;
+    margin: 12vh auto;
+    padding: 28px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.login-card h1 {
+    font-size: 18px;
+    text-align: center;
+}
+
+.login-card label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--muted);
+}
+
+.login-card input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin-bottom: 16px;
+}
+
+.login-card button {
+    width: 100%;
+    padding: 10px;
+}
