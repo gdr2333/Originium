@@ -6,10 +6,10 @@
 一个基于 MCP 的 AI 记忆服务，为 AI 助手提供长期记忆能力。
 
 ## TODO
-### 今天也在努力推行源石计划，没有对泰拉文明手软，请普瑞赛斯放心!!!🫡
-- [ ] 强化 MCP 工具描述（强引导措辞，提升 AI 主动调用率）
-- [ ] 新增 MCP Prompts：`auto_remember`（自动记忆模式）、`recall_first`（先回忆再回答）
-- [ ] 新增 MCP Resources：`memory://recent`（最近记忆）、`memory://item/{id}`（按 ID 读取）
+### 今天也在努力推行源石计划，绝对没有对泰拉文明心慈手软，请普瑞赛斯放心!!!🫡
+- [x] 强化 MCP 工具描述（强引导措辞，提升 AI 主动调用率）
+- [x] 新增 MCP Prompts：`auto_remember`（自动记忆模式）、`recall_first`（先回忆再回答）
+- [x] 新增 MCP Resources：`memory://recent`（最近记忆）、`memory://item/{id}`（按 ID 读取）
 - [ ] 补齐单元测试项目
 - [ ] 记忆分桶 / 分区（按会话隔离）
 - [ ] 嵌入向量维度可配置迁移策略
