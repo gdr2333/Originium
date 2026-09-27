@@ -227,7 +227,7 @@ try
     }
 
     logger.LogInformation("MCP 服务启动完成，开始监听请求...");
-    app.MapMcp();
+    app.MapMcp("/mcp");
     app.Run();
 }
 catch (Exception ex)
