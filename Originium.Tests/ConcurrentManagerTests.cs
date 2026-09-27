@@ -203,38 +203,48 @@ public class ConcurrentManagerTests : IDisposable
     }
 
     [Fact]
-    public void RunningCount_IncreasesWithExecution()
+    public async Task RunningCount_IncreasesWithExecution()
     {
-        var manager = new ConcurrentManager(3);
-        Assert.Equal(0, manager.RunningCount);
+        using var manager = new ConcurrentManager(3);
+        var tcs = new TaskCompletionSource<bool>();
 
         var task1 = manager.EnqueueAsync(async _ =>
         {
-            await Task.Delay(100);
+            tcs.SetResult(true);
+            await Task.Delay(10);
             return 1;
         });
 
+        await tcs.Task;
         Assert.Equal(1, manager.RunningCount);
+        await task1;
     }
 
     [Fact]
-    public void PendingCount_IncreasesWhenQueueing()
+    public async Task PendingCount_IncreasesWhenQueueing()
     {
-        var manager = new ConcurrentManager(1);
+        using var manager = new ConcurrentManager(1);
+        var tcs1 = new TaskCompletionSource<bool>();
 
         var task1 = manager.EnqueueAsync(async _ =>
         {
-            await Task.Delay(100);
+            tcs1.SetResult(true);
+            await Task.Delay(10);
             return 1;
         });
 
+        await tcs1.Task;
+        Assert.Equal(1, manager.RunningCount);
+
         var task2 = manager.EnqueueAsync(async _ =>
         {
-            await Task.Delay(100);
+            await Task.Delay(10);
             return 2;
         });
 
         Assert.Equal(1, manager.PendingCount);
+        await task1;
+        await task2;
     }
 
     public void Dispose()

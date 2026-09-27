@@ -1,6 +1,6 @@
 # AGENTS.md — Originium Memory Service
 
-Single ASP.NET Core 10.0 MCP server (MCP 2.2.0). One project, no test project.
+Single ASP.NET Core 10.0 MCP server (MCP 2.2.0) with two repository projects: `Originium` and `Originium.Tests`.
 
 ## Quick commands
 
