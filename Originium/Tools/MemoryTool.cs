@@ -11,7 +11,11 @@ namespace Originium.Tools;
 public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<MemoryTool> logger)
 {
     [McpServerTool]
-    [Description("将一条信息写入长期记忆。当用户陈述重要事实、个人偏好、决策结论、任务背景或任何值得跨会话保留的信息时调用此工具，避免后续重复询问。每次调用必须传入一条语义完整的信息单元（一个事实/偏好/决策/背景），禁止将同一条信息按字节长度拆成多次调用；若有多条独立信息，请分别调用本工具或使用 WriteMemories 批量提交。")]
+    [Description("将一条信息写入长期记忆。当用户陈述重要事实、个人偏好、决策结论、任务背景或任何值得跨会话保留的信息时调用此工具，避免后续重复询问。" +
+        "每次调用必须传入一条语义完整的信息单元（一个事实/偏好/决策/背景）。" +
+        "【严禁】按行数、字节数、字符数切割信息——即使内容只有一行，若包含多个独立语义单元（如多个事实、多个偏好），也必须拆分为多次调用。" +
+        "判断标准：将这条内容单独拿出来，不看上下文，能否让任何人理解其完整含义？如果不能，请继续拆分。" +
+        "若有多条独立信息，请分别调用本工具或使用 WriteMemories 批量提交。")]
     public async Task WriteMemory(
         [Description("记忆内容")] string content
         )
@@ -34,7 +38,9 @@ public class MemoryTool(MemoryDb db, EmbeddingsGeneratorManager egm, ILogger<Mem
     }
 
     [McpServerTool]
-    [Description("批量写入多条语义完整的长期记忆。每个元素必须是一条语义完整的信息单元（一个事实/偏好/决策/背景），禁止将同一条信息按字节长度拆成多个元素。用于一次性提交多条独立记忆，避免多次调用 WriteMemory 造成语义割裂；任一嵌入生成失败则整体不写入。")]
+    [Description("批量写入多条语义完整的长期记忆。每个元素必须是一条语义完整的信息单元（一个事实/偏好/决策/背景），" +
+        "【严禁】将同一条信息按行数、字节数、字符数拆成多个元素。每个元素独立存在时都应语义完整、可被单独理解。" +
+        "用于一次性提交多条独立记忆，避免多次调用 WriteMemory 造成语义割裂；任一嵌入生成失败则整体不写入。")]
     public async Task<WriteMemoriesResult> WriteMemories(
         [Description("待写入的记忆内容数组，每个元素为一条语义完整的记忆")] string[] contents
         )
